@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการข้อมูล Stock</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { padding: 20px; }
+        .data-table { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">จัดการข้อมูล Stock</h1>
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="stock-in-tab" data-toggle="tab" href="#stock-in-data" role="tab">1. ข้อมูล Stock In</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="stock-out-tab" data-toggle="tab" href="#stock-out-data" role="tab">2. ข้อมูล Stock Out</a>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-4">
+            <div class="tab-pane fade show active" id="stock-in-data" role="tabpanel">
+                
+                <h4 class="mt-4">ตารางสั่งซื้อ</h4>
+                <table class="table table-striped data-table">
+                    <thead>
+                        <tr>
+                            <th>รายละเอียดสินค้า</th>
+                            <th>รหัสสินค้าโรงงาน</th>
+                            <th>จำนวนสินค้าสั่งซื้อ</th>
+                            <th>ต้นทุนต่อตัว (บาท)</th>
+                            <th>วันเวลาที่กรอก</th> 
+                            <th>แก้ไขล่าสุด</th>
+                            <th>การกระทำ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.product_details }}</td>
+                            <td>{{ order.factory_sku }}</td>
+                            <td>{{ order.quantity }}</td>
+                            <td>{{ "%.2f"|format(order.cost_per_item) }}</td>
+                            <td>{{ order.order_date }}</td>
+                            <td>
+                                {{ order.updated_at if order.updated_at else '-' }}
+                            </td>
+                            <td>
+                                <a href="/edit/order/{{ order.order_id }}" class="btn btn-warning btn-sm">แก้ไข</a>
+                                <a href="/delete/order/{{ order.order_id }}" class="btn btn-danger btn-sm" onclick="return confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลนี้?');">ลบ</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <h4 class="mt-5">ตารางรับของ</h4>
+                <table class="table table-striped data-table">
+                    <thead>
+                        <tr>
+                            <th>ชื่อสินค้า</th>
+                            <th>รหัส SKU</th>
+                            <th>ไซส์ / สี / อื่นๆ</th>
+                            <th>จำนวนสินค้าเข้าคลัง</th>
+                            <th>วันเวลาที่กรอก</th>
+                            <th>แก้ไขล่าสุด</th>
+                            <th>การกระทำ</th>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.sku }}</td>
+                            <td>{{ product.details }}</td>
+                            <td>{{ product.stock }}</td>
+                            <td>{{ product.created_at }}</td>
+                            <td>
+                                {{ product.updated_at if product.updated_at else '-' }}
+                            </td>
+                            <td>
+                                <a href="/edit/product/{{ product.product_id }}" class="btn btn-warning btn-sm">แก้ไข</a>
+                                <a href="/delete/product/{{ product.product_id }}" class="btn btn-danger btn-sm" onclick="return confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลนี้?');">ลบ</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-pane fade" id="stock-out-data" role="tabpanel">
+                <h4 class="mt-4">ตารางขายออก</h4>
+                <table class="table table-striped data-table">
+                    <thead>
+                        <tr>
+                            <th>รหัส SKU</th>
+                            <th>ไซส์ / สี / อื่นๆ</th>
+                            <th>จำนวนที่ขายออก</th>
+                            <th>ราคาขาย (บาท)</th>
+                            <th>วันเวลาที่กรอก</th>
+                            <th>แก้ไขล่าสุด</th>
+                            <th>การกระทำ</th> </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales_with_details %}
+                        <tr>
+                            <td>{{ sale.sku }}</td>
+                            <td>{{ sale.details }}</td>
+                            <td>{{ sale.quantity }}</td>
+                            <td>{{ "%.2f"|format(sale.price_per_item) }}</td>
+                            <td>{{ sale.sale_date }}</td>
+                            <td>
+                                {{ sale.updated_at if sale.updated_at else '-' }}
+                            </td>
+                            <td>
+                                <a href="/edit/sale/{{ sale.sale_id }}" class="btn btn-warning btn-sm">แก้ไข</a>
+                                <a href="/delete/sale/{{ sale.sale_id }}" class="btn btn-danger btn-sm" onclick="return confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลนี้?');">ลบ</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <a href="/trash" class="btn btn-info mt-4">ดูข้อมูลที่ถูกลบ (ถังขยะ)</a>
+        <a href="/" class="btn btn-secondary mt-4">กลับไปหน้า Dashboard</a>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

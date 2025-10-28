@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกข้อมูล Stock</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { padding: 20px; }
+        .form-section { display: none; }
+        .form-section.active { display: block; }
+        .dynamic-fields .form-group {
+            margin-bottom: 0.5rem;
+        }
+        .add-row-btn, .remove-row-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-top: 2rem;
+            margin-left: 0.5rem;
+        }
+        .remove-row-btn {
+            background-color: #dc3545;
+        }
+        .back-to-dashboard-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">บันทึกข้อมูล Stock</h1>
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="order-tab" data-toggle="tab" href="#order" role="tab">สั่งซื้อ</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="stock-in-tab" data-toggle="tab" href="#stock-in" role="tab">รับของ</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="stock-out-tab" data-toggle="tab" href="#stock-out" role="tab">ขายออก</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="payment-tab" data-toggle="tab" href="#payment" role="role">โอนชำระ</a>
+            </li>
+        </ul>
+        
+        <div class="tab-content mt-4">
+            <!-- Tab สำหรับ สั่งซื้อ -->
+            <div class="tab-pane fade show active" id="order" role="tabpanel">
+                <form action="/submit_order" method="post">
+                    <div class="form-group">
+                        <label for="product_details">รายละเอียดสินค้า:</label>
+                        <input type="text" class="form-control" id="product_details" name="product_details" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="factory_sku">รหัสสินค้าโรงงาน:</label>
+                        <input type="text" class="form-control" id="factory_sku" name="factory_sku" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity_order">จำนวนสินค้าสั่งซื้อ:</label>
+                        <input type="number" class="form-control" id="quantity_order" name="quantity" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cost_per_item_order">ต้นทุนต่อตัว (บาท):</label>
+                        <input type="number" step="0.01" class="form-control" id="cost_per_item_order" name="cost_per_item" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                </form>
+            </div>
+            
+            <!-- Tab สำหรับ รับของ -->
+            <div class="tab-pane fade" id="stock-in" role="tabpanel">
+                <form action="/submit_stock_in" method="post">
+                    <div class="form-group">
+                        <label for="product_name_in">ชื่อสินค้า:</label>
+                        <input type="text" class="form-control" id="product_name_in" name="product_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sku_in">รหัส SKU:</label>
+                        <input type="text" class="form-control" id="sku_in" name="sku" required>
+                    </div>
+
+                    <div id="stock-in-fields">
+                        <div class="dynamic-fields">
+                            <div class="form-row">
+                                <div class="col">
+                                    <label for="details_in">ไซส์ / สี / อื่นๆ:</label>
+                                    <input type="text" class="form-control" name="details[]" required>
+                                </div>
+                                <div class="col">
+                                    <label for="quantity_in">จำนวนสินค้าเข้าคลัง:</label>
+                                    <input type="number" class="form-control" name="quantity[]" required>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-danger remove-row-btn" style="margin-top: 2rem;">-</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn add-row-btn" data-form="stock-in">+</button>
+                    <button type="submit" class="btn btn-primary mt-3">บันทึก</button>
+                </form>
+            </div>
+            
+            <!-- Tab สำหรับ ขายออก -->
+            <div class="tab-pane fade" id="stock-out" role="tabpanel">
+                <form action="/submit_stock_out" method="post">
+                    <div class="form-group">
+                        <label for="sku_select">รหัส SKU:</label>
+                        <select class="form-control" id="sku_select" name="sku" required>
+                            <option value="">เลือก</option>
+                        </select>
+                    </div>
+                    
+                    <div id="stock-out-fields">
+                        <div class="dynamic-fields">
+                            <div class="form-row">
+                                <div class="col">
+                                    <label for="details_select">ไซส์ / สี / อื่นๆ:</label>
+                                    <select class="form-control" name="details[]" required>
+                                        <option value="">เลือก</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label for="quantity_out">จำนวนที่ขายออก:</label>
+                                    <input type="number" class="form-control" name="quantity[]" required>
+                                </div>
+                                <div class="col">
+                                    <label for="price_out">ราคาขาย (บาท):</label>
+                                    <input type="number" step="0.01" class="form-control" name="price[]" required>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-danger remove-row-btn" style="margin-top: 2rem;">-</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn add-row-btn" data-form="stock-out">+</button>
+                    <button type="submit" class="btn btn-primary mt-3">บันทึก</button>
+                </form>
+            </div>
+
+            <!-- Tab สำหรับ โอนชำระ -->
+            <div class="tab-pane fade" id="payment" role="tabpanel">
+                <form action="/submit_payment" method="post">
+                    <div class="form-group">
+                        <label for="factory_sku_select">รหัสสินค้าโรงงาน:</label>
+                        <select class="form-control" id="factory_sku_select" name="factory_sku" required>
+                            <option value="">เลือก</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount_payment">จำนวนเงินที่ชำระแล้ว (บาท):</label>
+                        <input type="number" step="0.01" class="form-control" id="amount_payment" name="amount" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <a href="/" class="btn btn-secondary back-to-dashboard-btn">กลับไปหน้า Dashboard</a>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // JavaScript สำหรับการจัดการ Tabs
+        $('#myTab a').on('click', function (e) {
+            e.preventDefault();
+            $(this).tab('show');
+        });
+
+        // JavaScript สำหรับการเพิ่มฟิลด์แบบไดนามิก
+        $(document).on('click', '.add-row-btn', function() {
+            const formType = $(this).data('form');
+            const container = $(`#${formType}-fields`);
+            
+            // Find the first dynamic-fields template within the same container
+            const template = container.find('.dynamic-fields:first').html();
+            const newRow = $(`<div class="dynamic-fields">${template}</div>`);
+            
+            // Clear input values in the new row
+            newRow.find('input, select').val(''); 
+
+            container.append(newRow);
+        });
+
+        // JavaScript สำหรับการลบฟิลด์
+        $(document).on('click', '.remove-row-btn', function() {
+            // ป้องกันไม่ให้ลบแถวสุดท้าย
+            const container = $(this).closest('.tab-pane').find('.dynamic-fields');
+            if (container.length > 1) {
+                $(this).closest('.dynamic-fields').remove();
+            } else {
+                alert("ไม่สามารถลบแถวสุดท้ายได้");
+            }
+        });
+
+        // JavaScript สำหรับการดึงข้อมูลจาก Backend มาแสดงใน dropdowns
+        let productsData = [];
+
+        $(document).ready(function() {
+            // ดึงข้อมูลสินค้าทั้งหมด
+            fetch('/api/products')
+                .then(response => response.json())
+                .then(products => {
+                    productsData = products;
+
+                    const skuSelect = $('#sku_select');
+                    const paymentSkuSelect = $('#payment_sku_select');
+
+                    const uniqueSKUs = [...new Set(products.map(p => p.sku))];
+                    uniqueSKUs.forEach(sku => {
+                        skuSelect.append(`<option value="${sku}">${sku}</option>`);
+                        paymentSkuSelect.append(`<option value="${sku}">${sku}</option>`);
+                    });
+                });
+        });
+
+        // อัปเดตตัวเลือก Details เมื่อเลือก SKU ในฟอร์มขายออก
+        $(document).on('change', '#sku_select', function() {
+            const selectedSku = $(this).val();
+            const detailsSelect = $(this).closest('form').find('select[name="details[]"]');
+            
+            detailsSelect.each(function() {
+                const currentSelect = $(this);
+                currentSelect.empty().append('<option value="">เลือก</option>');
+                const filteredProducts = productsData.filter(p => p.sku === selectedSku);
+                const uniqueDetails = [...new Set(filteredProducts.map(p => p.details))];
+                uniqueDetails.forEach(details => {
+                    currentSelect.append(`<option value="${details}">${details}</option>`);
+                });
+            });
+        });
+
+        // อัปเดตตัวเลือก Details เมื่อเลือก SKU ในฟอร์มโอนชำระ
+        $('#payment_sku_select').on('change', function() {
+            const selectedSku = $(this).val();
+            const paymentDetailsSelect = $('#payment_details_select');
+            paymentDetailsSelect.empty().append('<option value="">เลือก</option>');
+            const filteredProducts = productsData.filter(p => p.sku === selectedSku);
+            const uniqueDetails = [...new Set(filteredProducts.map(p => p.details))];
+            uniqueDetails.forEach(details => {
+                paymentDetailsSelect.append(`<option value="${details}">${details}</option>`);
+            });
+        });
+    </script>
+</body>
+</html>

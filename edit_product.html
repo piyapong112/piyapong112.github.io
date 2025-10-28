@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>แก้ไขข้อมูลสินค้า</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">แก้ไขข้อมูลสินค้า ID: {{ product.product_id }}</h1>
+        <form action="/edit/product/{{ product.product_id }}" method="post">
+            <div class="form-group">
+                <label for="name">ชื่อสินค้า:</label>
+                <input type="text" class="form-control" name="name" value="{{ product.name }}" required>
+            </div>
+            <div class="form-group">
+                <label for="sku">รหัส SKU:</label>
+                <input type="text" class="form-control" name="sku" value="{{ product.sku }}" required>
+            </div>
+            <div class="form-group">
+                <label for="factory_sku">รหัสสินค้าโรงงาน:</label>
+                <input type="text" class="form-control" name="factory_sku" value="{{ product.factory_sku }}" required>
+            </div>
+            <div class="form-group">
+                <label for="details">รายละเอียด:</label>
+                <input type="text" class="form-control" name="details" value="{{ product.details }}">
+            </div>
+            <div class="form-group">
+                <label for="stock">สต็อก:</label>
+                <input type="number" class="form-control" name="stock" value="{{ product.stock }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary">บันทึกการแก้ไข</button>
+            <a href="/data" class="btn btn-secondary">ยกเลิก</a>
+        </form>
+    </div>
+</body>
+</html>

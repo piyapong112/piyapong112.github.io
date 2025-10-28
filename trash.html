@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ถังขยะ</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4">ถังขยะ (ข้อมูลที่ถูกลบใน 3 วันล่าสุด)</h1>
+
+        <h3 class="mt-5">Orders</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>รายละเอียด</th>
+                    <th>วันที่ลบ</th>
+                    <th>กู้คืน</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in orders %}
+                <tr>
+                    <td>{{ item.order_id }}</td>
+                    <td>{{ item.product_details }}</td>
+                    <td>{{ item.deleted_at }}</td>
+                    <td><a href="/restore/order/{{ item.order_id }}" class="btn btn-success">กู้คืน</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3 class="mt-5">Products</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Product ID</th>
+                    <th>ชื่อสินค้า</th>
+                    <th>วันที่ลบ</th>
+                    <th>กู้คืน</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in products %}
+                <tr>
+                    <td>{{ item.product_id }}</td>
+                    <td>{{ item.name }} ({{ item.details }})</td>
+                    <td>{{ item.deleted_at }}</td>
+                    <td><a href="/restore/product/{{ item.product_id }}" class="btn btn-success">กู้คืน</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3 class="mt-5">Sales</h3>
+        <table class="table table-bordered">
+             <thead>
+                <tr>
+                    <th>Sale ID</th>
+                    <th>Product ID</th>
+                    <th>วันที่ลบ</th>
+                    <th>กู้คืน</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sales %}
+                <tr>
+                    <td>{{ item.sale_id }}</td>
+                    <td>{{ item.product_id }}</td>
+                    <td>{{ item.deleted_at }}</td>
+                    <td><a href="/restore/sale/{{ item.sale_id }}" class="btn btn-success">กู้คืน</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <a href="/data" class="btn btn-secondary mt-4">กลับไปหน้าจัดการข้อมูล</a>
+    </div>
+</body>
+</html>

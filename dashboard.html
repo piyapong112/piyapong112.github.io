@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}แดชบอร์ด{% endblock %}
+
+{% block content %}
+<style>
+    /* Custom styles for metric cards */
+    .metric-card {
+        border: none;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    .metric-card .card-body {
+        padding: 1.5rem;
+    }
+    .metric-card .value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    .metric-card .label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">แดชบอร์ดระบบจัดการร้าน</h1>
+        <div class="btn-group">
+            <a href="/forms/stock-in" class="btn btn-primary">บันทึก Stock In</a>
+            <a href="/forms/stock-out" class="btn btn-success">บันทึก Stock Out</a>
+            <a href="/data" class="btn btn-info">จัดการข้อมูล</a>
+            <a href="/accounting" class="btn btn-warning">ดูข้อมูลบัญชี</a>
+        </div>
+    </div>
+
+    <!-- Metric Cards Row -->
+    <div class="row">
+        <div class="col-lg-2 col-md-4 mb-4">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <div class="value text-success">{{ "%.2f"|format(net_profit) }}</div>
+                    <div class="label">กำไรสุทธิ (บาท)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 mb-4">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <div class="value text-primary">{{ "%.2f"|format(total_revenue) }}</div>
+                    <div class="label">ยอดขายรวม</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 mb-4">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <div class="value text-danger">{{ "%.2f"|format(total_cost_of_goods_sold) }}</div>
+                    <div class="label">ต้นทุนขาย</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 mb-4">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <div class="value text-info">{{ "%.2f"|format(net_profit_margin) }}%</div>
+                    <div class="label">อัตรากำไรสุทธิ</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 mb-4">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <div class="value">{{ total_items_sold }}</div>
+                    <div class="label">จำนวนชิ้นที่ขาย</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 mb-4">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <div class="value text-secondary">{{ "%.2f"|format(current_stock_value) }}</div>
+                    <div class="label">มูลค่าสต็อกปัจจุบัน</div>
+                </div>
+            </div>
+        </div>
+        <!-- เพิ่มกล่องสรุปใหม่ตรงนี้ -->
+        <div class="col-lg-2 col-md-4 mb-4">
+            <div class="card metric-card h-100">
+                <div class="card-body text-center">
+                    <div class="value" style="color: #6f42c1;">{{ total_stock_remaining }}</div>
+                    <div class="label">สินค้าในคลัง (ชิ้น)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            กราฟแสดงผลประกอบการ
+        </div>
+        <div class="card-body">
+            <canvas id="performanceChart"></canvas>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">Top 5 สินค้าทำกำไรสูงสุด</div>
+                <ul class="list-group list-group-flush">
+                    {% for product, profit in top_profitable_products %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ product }}
+                        <span class="badge badge-success badge-pill">{{ "%.2f"|format(profit) }} บาท</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item">ยังไม่มีข้อมูล</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+             <div class="card">
+                <div class="card-header">สินค้าสต็อกใกล้หมด (<= 10 ชิ้น)</div>
+                <ul class="list-group list-group-flush">
+                    {% for product in low_stock_products %}
+                     <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ product.name }} ({{ product.details }})
+                        <span class="badge badge-warning badge-pill">{{ product.stock }} ชิ้น</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item">ไม่มีสินค้าใกล้หมด</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mt-4 bg-light">
+        <div class="card-body text-center">
+           <h5 class="card-title mb-0">ยอดค้างชำระโรงงานทั้งหมด: <span class="text-danger font-weight-bold">{{ "%.2f"|format(total_outstanding) }} บาท</span></h5>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch('/api/performance_data')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('performanceChart').getContext('2d');
+                const performanceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            });
+    });
+</script>
+{% endblock %}

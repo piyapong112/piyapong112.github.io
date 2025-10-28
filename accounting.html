@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>การจัดการต้นทุนและชำระเงิน</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container-fluid mt-4">
+    <h1 class="mb-4">ศูนย์กลางจัดการต้นทุนและหนี้สิน</h1>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">ยอดสั่งซื้อทั้งหมด</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ "%.2f"|format(total_order_costs) }} บาท</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">ชำระแล้วทั้งหมด</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ "%.2f"|format(total_paid_amount) }} บาท</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">ยอดค้างชำระรวม</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ "%.2f"|format(total_outstanding) }} บาท</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-success">{{ messages[0] }}</div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-header">
+            ตารางบัญชีเจ้าหนี้ (Accounts Payable Ledger)
+        </div>
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID สั่งซื้อ</th>
+                        <th>รายละเอียดสินค้า</th>
+                        <th>วันที่สั่ง</th>
+                        <th>ต้นทุนรวม</th>
+                        <th>จ่ายแล้ว</th>
+                        <th>ยอดค้างจ่าย</th>
+                        <th>การกระทำ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in accounting_data %}
+                    <tr>
+                        <td>{{ item.order_id }}</td>
+                        <td>{{ item.product_details }} (SKU: {{ item.factory_sku }})</td>
+                        <td>{{ item.order_date }}</td>
+                        <td>{{ "%.2f"|format(item.total_cost) }}</td>
+                        <td>{{ "%.2f"|format(item.paid_amount) }}</td>
+                        <td class="font-weight-bold {% if item.outstanding > 0 %}text-danger{% else %}text-success{% endif %}">
+                            {{ "%.2f"|format(item.outstanding) }}
+                        </td>
+                        <td>
+                            <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#paymentModal" data-order-id="{{ item.order_id }}" data-product-details="{{ item.product_details }}">
+                                ชำระเงิน
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <a href="/" class="btn btn-secondary mt-3">กลับไปหน้า Dashboard</a>
+</div>
+
+<div class="modal fade" id="paymentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentModalLabel">บันทึกการชำระเงิน</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="/submit_payment" method="post">
+                <div class="modal-body">
+                    <p><strong>สำหรับ Order:</strong> <span id="modal-product-details"></span></p>
+                    <input type="hidden" name="order_id" id="modal-order-id">
+                    <div class="form-group">
+                        <label for="amount">จำนวนเงินที่ชำระ (บาท):</label>
+                        <input type="number" step="0.01" class="form-control" name="amount" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_date">วันที่ชำระเงิน (หากไม่ระบุ จะเป็นวันนี้):</label>
+                        <input type="date" class="form-control" name="payment_date">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<script>
+    $('#paymentModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var orderId = button.data('order-id');
+        var productDetails = button.data('product-details');
+        
+        var modal = $(this);
+        modal.find('#modal-order-id').val(orderId);
+        modal.find('#modal-product-details').text(productDetails);
+    });
+</script>
+
+</body>
+</html>

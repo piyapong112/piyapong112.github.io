@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกข้อมูล Stock Out</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { padding: 20px; }
+        .dynamic-main-fields { border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-success text-center">
+                    <h4>{{ messages[0] }}</h4>
+                    <p>คุณต้องการทำอะไรต่อ?</p>
+                    <a href="/" class="btn btn-primary">1. กลับไป Dashboard</a>
+                    <a href="/data" class="btn btn-info">2. ไปหน้าจัดการข้อมูล</a>
+                    <a href="{{ request.path }}" class="btn btn-secondary">3. บันทึกข้อมูลเพิ่ม</a>
+                </div>
+            {% endif %}
+        {% endwith %}
+        <h1 class="mb-4">บันทึกข้อมูล Stock Out</h1>
+        
+        <form action="/submit_stock_out" method="post">
+            <div id="stock-out-main-fields-container">
+                </div>
+            
+            <button type="button" class="btn btn-success add-main-row-btn mt-2">เพิ่มชุดสินค้า (SKU)</button>
+            <button type="submit" class="btn btn-primary mt-3">บันทึกข้อมูลการขาย</button>
+        </form>
+    </div>
+    
+    <a href="/" class="btn btn-secondary" style="position: fixed; bottom: 20px; right: 20px;">กลับไปหน้า Dashboard</a>
+
+    <template id="main-form-template">
+        <div class="dynamic-main-fields">
+            <div class="form-group">
+                <label>รหัส SKU:</label>
+                <select class="form-control" name="sku[]" required>
+                    <option value="">เลือก SKU</option>
+                </select>
+            </div>
+
+            <div class="sub-fields-container">
+                </div>
+
+            <button type="button" class="btn btn-outline-primary btn-sm add-sub-row-btn mt-2">เพิ่มรายการ (ไซส์/สี)</button>
+            <button type="button" class="btn btn-outline-danger btn-sm remove-main-row-btn mt-2 float-right">ลบชุดสินค้านี้</button>
+        </div>
+    </template>
+
+    <template id="sub-form-template">
+        <div class="dynamic-sub-fields form-row align-items-end mb-2">
+            <div class="col">
+                <label>ไซส์ / สี / อื่นๆ:</label>
+                <select class="form-control" name="details[]" required>
+                    <option value="">เลือก</option>
+                </select>
+            </div>
+            <div class="col">
+                <label>จำนวนที่ขายออก:</label>
+                <input type="number" class="form-control" name="quantity[]" required>
+            </div>
+            <div class="col">
+                <label>ราคาขาย (บาท):</label>
+                <input type="number" step="0.01" class="form-control" name="price[]" required>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger btn-sm remove-sub-row-btn mb-1">-</button>
+            </div>
+        </div>
+    </template>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let productsData = [];
+
+            // --- MAIN FORM LOGIC ---
+            function addMainFormBlock() {
+                const mainTemplate = document.getElementById('main-form-template').content.cloneNode(true);
+                const mainFormContainer = $('#stock-out-main-fields-container');
+                mainFormContainer.append(mainTemplate);
+                
+                const newMainBlock = mainFormContainer.find('.dynamic-main-fields').last();
+                addSubFormBlock(newMainBlock.find('.add-sub-row-btn'));
+                
+                const skuSelect = newMainBlock.find('select[name="sku[]"]');
+                const uniqueSKUs = [...new Set(productsData.map(p => p.sku))];
+                uniqueSKUs.forEach(sku => {
+                    skuSelect.append(`<option value="${sku}">${sku}</option>`);
+                });
+
+                updateAllGroupIndices();
+            }
+
+            $('.add-main-row-btn').on('click', addMainFormBlock);
+            
+            $(document).on('click', '.remove-main-row-btn', function() {
+                if ($('.dynamic-main-fields').length > 1) {
+                    $(this).closest('.dynamic-main-fields').remove();
+                } else {
+                    alert('ไม่สามารถลบชุดสินค้าสุดท้ายได้');
+                }
+                updateAllGroupIndices();
+            });
+
+            // --- SUB FORM LOGIC ---
+            function addSubFormBlock(button) {
+                const mainBlock = $(button).closest('.dynamic-main-fields');
+                const subTemplate = document.getElementById('sub-form-template').content.cloneNode(true);
+                mainBlock.find('.sub-fields-container').append(subTemplate);
+
+                // --- FIX STARTS HERE ---
+                // หลังจากเพิ่มแถวใหม่ ให้ไปดึงข้อมูลไซส์มาใส่ทันที
+                const selectedSku = mainBlock.find('select[name="sku[]"]').val();
+                const newDetailsSelect = mainBlock.find('select[name="details[]"]').last();
+                
+                if (selectedSku) {
+                    const filteredProducts = productsData.filter(p => p.sku === selectedSku);
+                    const uniqueDetails = [...new Set(filteredProducts.map(p => p.details))];
+                    uniqueDetails.forEach(details => {
+                        newDetailsSelect.append(`<option value="${details}">${details}</option>`);
+                    });
+                }
+                // --- FIX ENDS HERE ---
+
+                updateAllGroupIndices();
+            }
+
+            $(document).on('click', '.add-sub-row-btn', function() {
+                addSubFormBlock(this);
+            });
+
+            $(document).on('click', '.remove-sub-row-btn', function() {
+                const subFieldsContainer = $(this).closest('.sub-fields-container');
+                if (subFieldsContainer.find('.dynamic-sub-fields').length > 1) {
+                    $(this).closest('.dynamic-sub-fields').remove();
+                } else {
+                    alert('ไม่สามารถลบรายการสุดท้ายได้');
+                }
+                updateAllGroupIndices();
+            });
+
+            // --- GROUP INDEX & DROPDOWN LOGIC ---
+            function updateAllGroupIndices() {
+                $('.dynamic-main-fields').each(function(mainIndex) {
+                    $(this).find('.dynamic-sub-fields').each(function() {
+                        $(this).find('input[name="group_index[]"]').remove();
+                        $(this).append(`<input type="hidden" name="group_index[]" value="${mainIndex}">`);
+                    });
+                });
+            }
+
+            $(document).on('change', 'select[name="sku[]"]', function() {
+                const selectedSku = $(this).val();
+                const mainBlock = $(this).closest('.dynamic-main-fields');
+                const detailsSelects = mainBlock.find('select[name="details[]"]');
+                
+                // เมื่อ SKU หลักเปลี่ยน ให้รีเซ็ต Dropdown ของไซส์ทั้งหมดในกลุ่ม
+                detailsSelects.each(function() {
+                    $(this).empty().append('<option value="">เลือก</option>');
+                    if (selectedSku) {
+                        const filteredProducts = productsData.filter(p => p.sku === selectedSku);
+                        const uniqueDetails = [...new Set(filteredProducts.map(p => p.details))];
+                        uniqueDetails.forEach(details => {
+                            $(this).append(`<option value="${details}">${details}</option>`);
+                        });
+                    }
+                });
+            });
+
+            // --- INITIALIZATION ---
+            fetch('/api/products')
+                .then(response => response.json())
+                .then(products => {
+                    productsData = products;
+                    if ($('.dynamic-main-fields').length === 0) {
+                        addMainFormBlock();
+                    }
+                });
+        });
+    </script>
+</body>
+</html>

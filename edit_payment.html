@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แก้ไขข้อมูลการชำระเงิน</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">แก้ไขข้อมูลการชำระเงิน Payment ID: {{ payment.payment_id }}</h1>
+        <form action="/edit/payment/{{ payment.payment_id }}" method="post">
+            <div class="form-group">
+                <label for="order_id">Order ID:</label>
+                <input type="number" class="form-control" name="order_id" value="{{ payment.order_id }}" required>
+            </div>
+            <div class="form-group">
+                <label for="amount">จำนวนเงิน:</label>
+                <input type="number" step="0.01" class="form-control" name="amount" value="{{ payment.amount }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary">บันทึกการแก้ไข</button>
+            <a href="/data" class="btn btn-secondary">ยกเลิก</a>
+        </form>
+    </div>
+</body>
+</html>

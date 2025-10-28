@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกข้อมูล Stock In</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { padding: 20px; transition: background-color 0.5s, color 0.5s; }
+        body.dark-mode { background-color: #121212; color: #e0e0e0; }
+        .card { margin-bottom: 20px; transition: background-color 0.5s, color 0.5s; }
+        .dark-mode .card { background-color: #1e1e1e !important; color: #e0e0e0; border-color: #444; }
+        .card-header { font-weight: bold; }
+        .card-body h5 { color: #555; transition: color 0.5s; }
+        .dark-mode .card-body h5 { color: #bdbdbd; }
+        .btn-group { display: flex; justify-content: space-around; }
+        .btn { transition: all 0.3s; }
+        .dark-mode .btn-secondary { background-color: #444; border-color: #555; color: #e0e0e0; }
+        .dark-mode .btn-secondary:hover { background-color: #555; }
+        .btn-toggle-dark-mode {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+        }
+        .outstanding-table { max-height: 200px; overflow-y: auto; margin-bottom: 1rem; }
+        .dynamic-fields .form-group {
+            margin-bottom: 0.5rem;
+        }
+        /* Style for main add button */
+        .add-main-row-btn {
+            background-color: #28a745;
+            color: white;
+            border: 1px solid #28a745;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        /* Style for sub-form add button */
+        .add-sub-row-btn {
+            background-color: transparent;
+            color: #28a745;
+            border: 1px solid #28a745;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        /* Style for the main remove button */
+        .remove-main-row-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        /* Style for the sub-form remove button */
+        .remove-sub-row-btn {
+            background-color: transparent;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .back-to-dashboard-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+        }
+        .form-action-container {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+        }
+        .form-action-container p {
+            margin: 0 1rem 0 0;
+            color: #6c757d;
+        }
+        .top-action-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            justify-content: flex-end;
+        }
+        .top-action-container p {
+            margin-right: 0.5rem;
+        }
+        .remove-action-container {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+            justify-content: flex-end;
+        }
+        .remove-action-container p {
+            margin: 0 0.5rem 0 0;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-success text-center">
+                    <h4>{{ messages[0] }}</h4>
+                    <p>คุณต้องการทำอะไรต่อ?</p>
+                    <a href="/" class="btn btn-primary">1. กลับไป Dashboard</a>
+                    <a href="/data" class="btn btn-info">2. ไปหน้าจัดการข้อมูล</a>
+                    <a href="{{ request.path }}" class="btn btn-secondary">3. บันทึกข้อมูลเพิ่ม</a>
+                </div>
+            {% endif %}
+        {% endwith %}
+        <h1 class="mb-4">บันทึกข้อมูล Stock In</h1>
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="order-tab" data-toggle="tab" href="#order" role="tab">สั่งซื้อ</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="stock-in-tab" data-toggle="tab" href="#stock-in" role="tab">รับของ</a>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-4">
+            <!-- Tab สำหรับ สั่งซื้อ -->
+            <div class="tab-pane fade show active" id="order" role="tabpanel">
+                <form action="/submit_order" method="post">
+                    <div class="top-action-container">
+                        <p>กดเพื่อเพิ่มฟอร์มอีกชุด</p>
+                        <button type="button" class="btn add-main-row-btn" data-form="order">+</button>
+                    </div>
+                    <div id="order-fields">
+                        <div class="dynamic-main-fields">
+                            <div class="form-group">
+                                <label for="product_details">รายละเอียดสินค้า:</label>
+                                <input type="text" class="form-control" name="product_details[]" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="factory_sku">รหัสสินค้าโรงงาน:</label>
+                                <input type="text" class="form-control" name="factory_sku[]" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="quantity_order">จำนวนสินค้าสั่งซื้อ:</label>
+                                <input type="number" class="form-control" name="quantity[]" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cost_per_item_order">ต้นทุนต่อตัว (บาท):</label>
+                                <input type="number" step="0.01" class="form-control" name="cost_per_item[]" required>
+                            </div>
+                            <div class="remove-action-container">
+                                <p>กดเพื่อลบฟอร์ม</p>
+                                <button type="button" class="btn remove-main-row-btn">-</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">บันทึก</button>
+                </form>
+            </div>
+            
+            <!-- Tab สำหรับ รับของ -->
+            <div class="tab-pane fade" id="stock-in" role="tabpanel">
+                <form action="/submit_stock_in" method="post">
+                    <div class="top-action-container">
+                        <p>กดเพื่อเพิ่มฟอร์มอีกชุด</p>
+                        <button type="button" class="btn add-main-row-btn" data-form="stock-in-main">+</button>
+                    </div>
+                    <div id="stock-in-main-fields">
+                        <div class="dynamic-main-fields">
+                            <div class="form-group">
+                                <label for="product_name_in">ชื่อสินค้า:</label>
+                                <input type="text" class="form-control" name="product_name[]" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="sku_in">รหัส SKU:</label>
+                                <input type="text" class="form-control" name="sku[]" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="factory_sku_in">รหัสสินค้าโรงงาน (Factory SKU):</label>
+                                <input type="text" class="form-control" name="factory_sku[]" required>
+                            </div>
+                            <div id="stock-in-sub-fields">
+                                <div class="dynamic-sub-fields">
+                                    <div class="form-row">
+                                        <div class="col">
+                                            <label for="details_in">ไซส์ / สี / อื่นๆ:</label>
+                                            <input type="text" class="form-control" name="details[]" required>
+                                        </div>
+                                        <div class="col">
+                                            <label for="quantity_in">จำนวนสินค้าเข้าคลัง:</label>
+                                            <input type="number" class="form-control" name="quantity[]" required>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="remove-action-container" style="margin-top: 2rem; align-items: flex-start;">
+                                                <p>กดเพื่อลบฟอร์ม</p>
+                                                <button type="button" class="btn remove-sub-row-btn">-</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-action-container justify-content-start">
+                                <button type="button" class="btn add-sub-row-btn" data-form="stock-in-sub">+</button>
+                                <p style="margin-left: 0.5rem;">กดเพื่อเพิ่มฟอร์มอีกชุด</p>
+                            </div>
+                            <div class="remove-action-container">
+                                <p>กดเพื่อลบฟอร์ม</p>
+                                <button type="button" class="btn remove-main-row-btn">-</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">บันทึก</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <a href="/" class="btn btn-secondary back-to-dashboard-btn">กลับไปหน้า Dashboard</a>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // --- JAVASCRIPT เวอร์ชันแก้ไขสมบูรณ์ ---
+
+        // ฟังก์ชันสำหรับอัปเดตป้ายกำกับกลุ่มในฟอร์ม
+        function updateGroupIndices(formElement) {
+            const index = $(formElement).data('main-index');
+            $(formElement).find('.dynamic-sub-fields').each(function() {
+                $(this).find('input[name="group_index[]"]').remove();
+                $(this).append(`<input type="hidden" name="group_index[]" value="${index}">`);
+            });
+        }
+
+        // เมื่อเพิ่มฟอร์มหลัก
+        $(document).on('click', '.add-main-row-btn', function() {
+            const currentForm = $(this).closest('form');
+            const container = currentForm.find('.dynamic-main-fields').parent();
+            const nextIndex = container.find('.dynamic-main-fields').length;
+            const template = container.find('.dynamic-main-fields:first').clone();
+            template.find('input, select').val('');
+            template.data('main-index', nextIndex);
+            container.append(template);
+            updateGroupIndices(template);
+        });
+
+        // เมื่อลบฟอร์มหลัก
+        $(document).on('click', '.remove-main-row-btn', function() {
+            const container = $(this).closest('form').find('.dynamic-main-fields');
+            if (container.length > 1) {
+                $(this).closest('.dynamic-main-fields').remove();
+            } else {
+                alert("ไม่สามารถลบแถวสุดท้ายได้");
+            }
+        });
+
+        // เมื่อเพิ่มฟอร์มย่อย
+        $(document).on('click', '.add-sub-row-btn', function() {
+            const mainForm = $(this).closest('.dynamic-main-fields');
+            const container = mainForm.find('.dynamic-sub-fields').parent();
+            const template = container.find('.dynamic-sub-fields:first').clone();
+            template.find('input, select').val('');
+            container.append(template);
+            updateGroupIndices(mainForm);
+        });
+
+        // เมื่อลบฟอร์มย่อย
+        $(document).on('click', '.remove-sub-row-btn', function() {
+            const mainForm = $(this).closest('.dynamic-main-fields');
+            const container = mainForm.find('.dynamic-sub-fields');
+            if (container.length > 1) {
+                $(this).closest('.dynamic-sub-fields').remove();
+            } else {
+                alert("ไม่สามารถลบแถวสุดท้ายได้");
+            }
+        });
+
+        // โค้ดสำหรับจัดการ Dropdown โดยเฉพาะ
+        let productsData = [];
+
+        function populateAllSkuDropdowns() {
+            const uniqueSKUs = [...new Set(productsData.map(p => p.sku))];
+            $('select[name="sku[]"]').each(function() {
+                const currentSku = $(this).val();
+                $(this).empty().append('<option value="">เลือก</option>');
+                uniqueSKUs.forEach(sku => {
+                    $(this).append(`<option value="${sku}">${sku}</option>`);
+                });
+                $(this).val(currentSku);
+            });
+        }
+
+        $(document).on('change', 'select[name="sku[]"]', function() {
+            const selectedSku = $(this).val();
+            const detailsSelects = $(this).closest('.dynamic-main-fields').find('select[name="details[]"]');
+            detailsSelects.empty().append('<option value="">เลือก</option>');
+            if (selectedSku) {
+                const filteredProducts = productsData.filter(p => p.sku === selectedSku);
+                const uniqueDetails = [...new Set(filteredProducts.map(p => p.details))];
+                uniqueDetails.forEach(details => {
+                    detailsSelects.append(`<option value="${details}">${details}</option>`);
+                });
+            }
+        });
+
+        // ตั้งค่าเริ่มต้นสำหรับฟอร์มทั้งหมดที่มีอยู่แล้ว
+        $(document).ready(function() {
+            $('form').each(function() {
+                $(this).find('.dynamic-main-fields').each(function(index) {
+                    $(this).data('main-index', index);
+                    updateGroupIndices(this);
+                });
+            });
+
+            fetch('/api/products')
+                .then(response => response.json())
+                .then(products => {
+                    productsData = products;
+                    populateAllSkuDropdowns();
+                });
+        });
+    </script>
+</body>
+</html>
